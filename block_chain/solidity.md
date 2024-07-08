@@ -258,11 +258,15 @@ receive()   fallback()
 
 
 
+
+
 #### 发送以太币
 
 三种发送`ETH`的方法：`transfer`，`send`和`call`。
 
 - `call`没有`gas`限制，最为灵活，是最提倡的方法；发送失败不会自动`revert`交易。
+
+  > 即call能够捕获到回滚
 - `transfer`有`2300 gas`限制，但是发送失败会自动`revert`交易，是次优选择；
 - `send`有`2300 gas`限制，而且发送失败不会自动`revert`交易，几乎没有人用它。
 
@@ -332,7 +336,54 @@ abi.encodeWithSelector(bytes4(keccak256("f(uint256,address)")), _x, _addr);
 
 
 
+#### 合约账户无私钥
+
+合约账户是没有私钥的。
+
+假设我们有以下合约 `A` 和 `B`：
+
+```solidity
+// 合约 A
+contract A {
+    function callB(address _b) public {
+        B b = B(_b);
+        b.someFunction();
+    }
+}
+
+// 合约 B
+contract B {
+    function someFunction() public {
+        // 执行某些操作
+    }
+}
+
+```
+
++ 用户使用外部账户 `EOA1` 调用合约 `A` 的 `callB` 函数。
+
++ `EOA1` 生成一个交易并使用其私钥进行签名，然后将交易发送到以太坊网络。
+
++ 交易被节点验证，通过后，合约 `A` 被调用并执行 `callB` 函数。
+
++ 在 `callB` 函数中，合约 `A` 调用合约 `B` 的 `someFunction` 函数。
+
++ 整个过程中，所有调用都是基于初始由 `EOA1` 发起并签名的交易。
 
 
 
+#### mempool公开访问
 
+
+
+以太坊是一个去中心化的区块链网络，每个节点都有一个自己的 mempool。为了确保交易的透明性和公平性，mempool 的内容是公开的，任何人都可以通过连接到以太坊节点来查看 mempool 中的交易。
+
+
+
+访问mempool方式
+
++ **全节点**：运行以太坊全节点（例如 Geth 或 Parity）可以直接访问 mempool。全节点会存储并管理所有待确认的交易。
+
++ **区块浏览器**：一些区块浏览器（例如 Etherscan）提供 mempool 的可视化服务，用户可以通过这些工具查看当前未确认的交易。
+
++ **第三方 API**：一些第三方服务提供 mempool 数据的 API 接口，开发者可以通过这些接口获取 mempool 中的交易信息。
